@@ -1,44 +1,45 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-
-interface User {
-  username: string;
-  role: 'administrator' | 'supervisor';
-  assignedProject?: number;
-}
-
-const MOCK_USERS: User[] = [
-  { username: 'admin', role: 'administrator' },
-  { username: 'supervisor1', role: 'supervisor', assignedProject: 1 },
-  { username: 'supervisor2', role: 'supervisor', assignedProject: 2 },
-]
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { signInWithEmailAndPassword } from "firebase/auth"; // Import Firebase Auth function
+import { auth } from "@/lib/firebase"; // Ensure this points to your Firebase configuration
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function LoginPage() {
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const router = useRouter()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setError('')
+    e.preventDefault();
+    setError("");
 
-    const user = MOCK_USERS.find(u => u.username === username)
-    if (user && password === 'password') { // In a real app, use proper authentication
-      if (user.role === 'administrator') {
-        router.push('/projects')
+    try {
+      // Firebase authentication with email and password
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Example: Custom claims or user metadata should dictate routing
+      const userRole = user?.email === "admin@example.com" ? "administrator" : "supervisor";
+      const assignedProject = userRole === "supervisor" ? 1 : undefined; // Example logic
+
+      // Route based on role
+      if (userRole === "administrator") {
+        router.push("/projects");
+      } else if (userRole === "supervisor" && assignedProject) {
+        router.push(`/projects/${assignedProject}`);
       } else {
-        router.push(`/projects/${user.assignedProject}`)
+        throw new Error("User role not recognized.");
       }
-    } else {
-      setError('Invalid username or password')
+    } catch (error: any) {
+      console.error("Login error:", error.message);
+      setError(error.message || "Invalid email or password.");
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -49,13 +50,14 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <label htmlFor="username" className="text-sm font-medium">
-                Username
+              <label htmlFor="email" className="text-sm font-medium">
+                Email
               </label>
               <Input
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
@@ -79,6 +81,5 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
-
