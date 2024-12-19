@@ -6,17 +6,38 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
+interface User {
+  username: string;
+  role: 'administrator' | 'supervisor';
+  assignedProject?: number;
+}
+
+const MOCK_USERS: User[] = [
+  { username: 'admin', role: 'administrator' },
+  { username: 'supervisor1', role: 'supervisor', assignedProject: 1 },
+  { username: 'supervisor2', role: 'supervisor', assignedProject: 2 },
+]
+
 export default function LoginPage() {
-  const [isLoading, setIsLoading] = useState(false)
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setIsLoading(true)
-    // Simulate login - replace with actual authentication
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    router.push('/projects')
-    setIsLoading(false)
+    setError('')
+
+    const user = MOCK_USERS.find(u => u.username === username)
+    if (user && password === 'password') { // In a real app, use proper authentication
+      if (user.role === 'administrator') {
+        router.push('/projects')
+      } else {
+        router.push(`/projects/${user.assignedProject}`)
+      }
+    } else {
+      setError('Invalid username or password')
+    }
   }
 
   return (
@@ -28,13 +49,13 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium">
-                Email
+              <label htmlFor="username" className="text-sm font-medium">
+                Username
               </label>
               <Input
-                id="email"
-                type="email"
-                placeholder="Enter your email"
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 required
               />
             </div>
@@ -45,16 +66,14 @@ export default function LoginPage() {
               <Input
                 id="password"
                 type="password"
-                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
               />
             </div>
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Logging in...' : 'Login'}
+            {error && <p className="text-red-500 text-sm">{error}</p>}
+            <Button type="submit" className="w-full">
+              Login
             </Button>
           </form>
         </CardContent>

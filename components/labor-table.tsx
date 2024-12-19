@@ -42,10 +42,11 @@ const AVAILABLE_CATEGORIES = [
 ]
 
 interface LaborTableProps {
-  selectedDate: Date | undefined
+  selectedDate: Date
+  userRole: 'administrator' | 'supervisor'
 }
 
-export default function LaborTable({ selectedDate }: LaborTableProps) {
+export default function LaborTable({ selectedDate, userRole }: LaborTableProps) {
   const [entries, setEntries] = useState<LaborEntry[]>([])
   const [contractors, setContractors] = useState(['C1', 'C2'])
   const [isSaving, setIsSaving] = useState(false)
@@ -57,6 +58,7 @@ export default function LaborTable({ selectedDate }: LaborTableProps) {
   }, {} as { [key: string]: number })
 
   const addRow = () => {
+    if (userRole !== 'administrator') return
     const newEntry: LaborEntry = {
       id: Math.random().toString(36).substr(2, 9),
       category: '',
@@ -69,6 +71,7 @@ export default function LaborTable({ selectedDate }: LaborTableProps) {
   }
 
   const addContractor = () => {
+    if (userRole !== 'administrator') return
     const name = prompt('Enter contractor name (e.g. C3):')
     if (name && !contractors.includes(name)) {
       setContractors([...contractors, name])
@@ -80,6 +83,7 @@ export default function LaborTable({ selectedDate }: LaborTableProps) {
   }
 
   const removeContractor = (contractorToRemove: string) => {
+    if (userRole !== 'administrator') return
     setContractors(contractors.filter(c => c !== contractorToRemove))
     setEntries(entries.map(entry => {
       const { [contractorToRemove]: _, ...rest } = entry.values
@@ -88,6 +92,7 @@ export default function LaborTable({ selectedDate }: LaborTableProps) {
   }
 
   const updateValue = (entryId: string, contractor: string, value: string) => {
+    if (userRole !== 'supervisor') return
     const numValue = Math.max(0, parseInt(value) || 0)
     setEntries(entries.map(entry =>
       entry.id === entryId
@@ -97,6 +102,7 @@ export default function LaborTable({ selectedDate }: LaborTableProps) {
   }
 
   const updateCategory = (entryId: string, category: string) => {
+    if (userRole !== 'administrator') return
     setEntries(entries.map(entry =>
       entry.id === entryId
         ? { ...entry, category }
@@ -113,29 +119,17 @@ export default function LaborTable({ selectedDate }: LaborTableProps) {
 
   useEffect(() => {
     // Fetch data for the selected date
-    console.log(`Fetching data for ${selectedDate?.toISOString().split('T')[0]}`)
+    console.log(`Fetching data for ${selectedDate.toISOString().split('T')[0]}`)
     // Here you would typically fetch the data from an API
+    // For now, we'll just set some mock data
+    setEntries([
+      { id: '1', category: 'Tile Mason', values: { C1: 2, C2: 7 } },
+      { id: '2', category: 'Plumber', values: { C1: 8, C2: 9 } },
+    ])
   }, [selectedDate])
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap justify-between items-center gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <Button onClick={addRow} className="w-full sm:w-auto">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Row
-          </Button>
-          <Button variant="outline" onClick={addContractor} className="w-full sm:w-auto">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Contractor
-          </Button>
-        </div>
-        <Button onClick={handleSave} disabled={isSaving} className="w-full sm:w-auto">
-          <Save className="w-4 h-4 mr-2" />
-          {isSaving ? 'Saving...' : 'Save Changes'}
-        </Button>
-      </div>
-
+    <div className="space-y-4 pb-20">
       <div className="overflow-x-auto border rounded-lg">
         <Table>
           <TableHeader>
@@ -145,15 +139,17 @@ export default function LaborTable({ selectedDate }: LaborTableProps) {
                 <TableHead key={contractor} className="border-r relative min-w-[100px]">
                   <div className="flex items-center justify-between pr-6">
                     {contractor}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 absolute top-1 right-1"
-                      onClick={() => removeContractor(contractor)}
-                    >
-                      <X className="h-4 w-4" />
-                      <span className="sr-only">Remove {contractor}</span>
-                    </Button>
+                    {userRole === 'administrator' && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 absolute top-1 right-1"
+                        onClick={() => removeContractor(contractor)}
+                      >
+                        <X className="h-4 w-4" />
+                        <span className="sr-only">Remove {contractor}</span>
+                      </Button>
+                    )}
                   </div>
                 </TableHead>
               ))}
@@ -163,21 +159,25 @@ export default function LaborTable({ selectedDate }: LaborTableProps) {
             {entries.map((entry, index) => (
               <TableRow key={entry.id} className={index % 2 === 0 ? 'bg-muted/50' : ''}>
                 <TableCell className="border-r">
-                  <Select
-                    value={entry.category}
-                    onValueChange={(value) => updateCategory(entry.id, value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {AVAILABLE_CATEGORIES.map(category => (
-                        <SelectItem key={category} value={category}>
-                          {category}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {userRole === 'administrator' ? (
+                    <Select
+                      value={entry.category}
+                      onValueChange={(value) => updateCategory(entry.id, value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {AVAILABLE_CATEGORIES.map(category => (
+                          <SelectItem key={category} value={category}>
+                            {category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    entry.category
+                  )}
                 </TableCell>
                 {contractors.map(contractor => (
                   <TableCell key={contractor} className="border-r">
@@ -187,6 +187,8 @@ export default function LaborTable({ selectedDate }: LaborTableProps) {
                       value={entry.values[contractor]}
                       onChange={(e) => updateValue(entry.id, contractor, e.target.value)}
                       className="w-full"
+                      readOnly={userRole === 'administrator'}
+                      inputMode={userRole === 'supervisor' ? 'numeric' : undefined}
                     />
                   </TableCell>
                 ))}
@@ -201,6 +203,32 @@ export default function LaborTable({ selectedDate }: LaborTableProps) {
           </TableBody>
         </Table>
       </div>
+      {userRole === 'supervisor' && (
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t">
+          <Button onClick={handleSave} disabled={isSaving} className="w-full">
+            <Save className="w-4 h-4 mr-2" />
+            {isSaving ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </div>
+      )}
+      {userRole === 'administrator' && (
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t">
+          <div className="flex space-x-2">
+            <Button onClick={addRow} className="flex-1">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Row
+            </Button>
+            <Button variant="outline" onClick={addContractor} className="flex-1">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Contractor
+            </Button>
+            <Button onClick={handleSave} disabled={isSaving} className="flex-1">
+              <Save className="w-4 h-4 mr-2" />
+              {isSaving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

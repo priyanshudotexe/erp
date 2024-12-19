@@ -1,50 +1,32 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import { Calendar } from 'lucide-react'
-import { Button } from "@/components/ui/button"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import { Calendar as CalendarComponent } from "@/components/ui/calendar"
-import LaborTable from '../../../components/labor-table'
+import AdminView from '../../../components/admin-view'
+import SupervisorView from '../../../components/supervisor-view'
+
+// Mock function to get user role - replace with actual authentication in a real app
+const getUserRole = () => {
+  // For demonstration, we'll alternate between admin and supervisor
+  return Math.random() < 0.5 ? 'administrator' : 'supervisor'
+}
 
 export default function ProjectPage() {
   const params = useParams()
-  const projectId = params.id
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
+  const projectId = params.id as string
+  const [userRole, setUserRole] = useState<'administrator' | 'supervisor'>('administrator')
 
-  const handleDateSelect = (date: Date | undefined) => {
-    setSelectedDate(date)
-    // Here you would typically fetch the data for the selected date
-    console.log(`Fetching data for project ${projectId} on ${date?.toISOString().split('T')[0]}`)
-  }
+  useEffect(() => {
+    setUserRole(getUserRole())
+  }, [])
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
-        <h1 className="text-3xl font-bold">Project {projectId} Details</h1>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className="w-full sm:w-auto">
-              <Calendar className="w-4 h-4 mr-2" />
-              {selectedDate ? selectedDate.toLocaleDateString() : 'Select Date'}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="end">
-            <CalendarComponent
-              mode="single"
-              selected={selectedDate}
-              onSelect={handleDateSelect}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
-      </div>
-      <LaborTable selectedDate={selectedDate} />
+    <div className="container mx-auto py-8 px-4 pb-24">
+      {userRole === 'administrator' ? (
+        <AdminView projectId={projectId} />
+      ) : (
+        <SupervisorView projectId={projectId} />
+      )}
     </div>
   )
 }
