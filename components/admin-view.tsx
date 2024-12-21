@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Calendar } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import {
@@ -10,9 +10,42 @@ import {
 } from "@/components/ui/popover"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import LaborTable from './labor-table'
+import { db } from "@/lib/firebase";
+import { collection, getDocs, Timestamp, addDoc, doc, getDoc } from "firebase/firestore";
 
 export default function AdminView({ projectId }: { projectId: string }) {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+  const [projectName, setProjectName ]= useState<string>("");
+  const [projectSupervisor, setProjectSupervisor] = useState<string>("");
+  useEffect(() => {
+    const fetchProjectDetails = async () => {
+      try {
+        // Reference the specific document within the "projects" collection
+        const projectRef = doc(db, "projects", projectId);
+
+        // Fetch the document
+        const projectSnapshot = await getDoc(projectRef);
+
+        if (projectSnapshot.exists()) {
+          const projectData = projectSnapshot.data();
+          setProjectName(projectData.name);
+          setProjectSupervisor(projectData.supervisorName);
+          console.log(
+            `Fetched project ${projectData.name} details for project ${projectId}`
+          );
+        } else {
+          console.error("No such project found!");
+        }
+      } catch (error) {
+        console.error("Error fetching project details:", error);
+      }
+    };
+
+    fetchProjectDetails();
+  }, [projectId]);
+
+
+
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
@@ -24,7 +57,7 @@ export default function AdminView({ projectId }: { projectId: string }) {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-        <h1 className="text-3xl font-bold">Project {projectId} Details (Administrator View)</h1>
+        <h1 className="text-3xl font-bold">Project {projectName} Details (Administrator View) Supervisor {projectSupervisor}</h1>
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" className="w-full sm:w-auto">
@@ -42,7 +75,7 @@ export default function AdminView({ projectId }: { projectId: string }) {
           </PopoverContent>
         </Popover>
       </div>
-      <LaborTable selectedDate={selectedDate} userRole="administrator" />
+      <LaborTable selectedDate={selectedDate} userRole="administrator" projectId={projectId} />
     </div>
   )
 }
