@@ -9,14 +9,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 interface User {
   username: string;
   role: 'administrator' | 'supervisor';
-  assignedProject?: number;
+  assignedProject?: string;
 }
 
 const MOCK_USERS: User[] = [
-  { username: 'admin', role: 'administrator' },
-  { username: 'supervisor1', role: 'supervisor', assignedProject: 1 },
-  { username: 'supervisor2', role: 'supervisor', assignedProject: 2 },
-]
+  { username: "admin", role: "administrator" },
+  {
+    username: "supervisor1",
+    role: "supervisor",
+    assignedProject: "dy9nWi6S6NiTVJwR8cif",
+  },
+  {
+    username: "supervisor2",
+    role: "supervisor",
+    assignedProject: "fr04IrYvjOYs9gCQQeJA",
+  },
+];
 
 export default function LoginPage() {
   const [username, setUsername] = useState('')

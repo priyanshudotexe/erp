@@ -50,7 +50,7 @@ export default function AdminView({ projectId }: { projectId: string }) {
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
       setSelectedDate(date)
-      console.log(`Fetching data for project ${projectId} on ${date.toISOString().split('T')[0]}`)
+      console.log(`Fetching name for project ${projectId} on ${date.toISOString().split('T')[0]}`)
     }
   }
 
