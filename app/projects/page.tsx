@@ -2,10 +2,13 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, LogOut } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
+
 import {
   Dialog,
   DialogContent,
@@ -25,7 +28,8 @@ type Project = {
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [newProjectName, setNewProjectName] = useState("");
-
+  const { user,logout } = useAuth();
+  const router = useRouter();
   useEffect(() => {
     const fetchProjects = async () => {
       const projectsCollection = collection(db, "projects");
@@ -43,9 +47,22 @@ export default function ProjectsPage() {
 
       setProjects(projectList); // Update state with the properly typed data
     };
+    if (!user) {
+      router.push("/login");
+    }else if (user.role !== 'administrator') {
+      router.push(`/projects/${user.assignedProject}`)
+    }
 
     fetchProjects();
-  }, []);
+  }, [user,router]);
+  
+  const handleLogout = () => {
+    logout();
+    router.push("/login");
+  };
+  if (!user || user.role !== "administrator") {
+    return null; // or a loading spinner
+  }
 
   const addProject = async () => {
     if (newProjectName.trim()) {
@@ -79,7 +96,7 @@ export default function ProjectsPage() {
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">
+        {/* //<h1 className="text-3xl font-bold">
           All Projects (Administrator View)
         </h1>
         <Dialog>
@@ -103,6 +120,60 @@ export default function ProjectsPage() {
             </div>
           </DialogContent>
         </Dialog>
+     // </div> */}
+        <h1 className="text-3xl font-bold">
+          All Projects (Administrator View)
+        </h1>
+        <div className="flex items-center space-x-4">
+          {/* {user.role === "administrator" && (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Project
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add New Project</DialogTitle>
+                </DialogHeader>
+                <div className="flex items-center space-x-2">
+                  <Input
+                    placeholder="Project name"
+                    value={newProjectName}
+                    onChange={(e) => setNewProjectName(e.target.value)}
+                  />
+                  <Button onClick={addProject}>Add</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )} */}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                New Project
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Project</DialogTitle>
+              </DialogHeader>
+              <div className="flex items-center space-x-2">
+                <Input
+                  placeholder="Project name"
+                  value={newProjectName}
+                  onChange={(e) => setNewProjectName(e.target.value)}
+                />
+                <Button onClick={addProject}>Add</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Button variant="outline" onClick={handleLogout}>
+            <LogOut className="w-4 h-4 mr-2" />
+            Logout
+          </Button>
+        </div>
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {projects.map((project) => (

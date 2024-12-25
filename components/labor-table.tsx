@@ -372,6 +372,14 @@ import {
   updateDoc,
   Timestamp,
 } from "firebase/firestore";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { startOfDay, endOfDay } from "date-fns";
 interface LaborEntry {
   contractor: string;
@@ -406,17 +414,19 @@ export default function LaborTable({
 }: LaborTableProps) {
   const [entries, setEntries] = useState<LaborEntry[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [newContractorName, setNewContractorName] = useState("");
 
   const addRow = () => {
-    if (userRole !== "administrator") return;
+    if (userRole !== "administrator" || !newContractorName.trim()) return;
     const newEntry: LaborEntry = {
-      contractor: `C${entries.length + 1}`,
+      contractor: newContractorName.trim(),
       values: AVAILABLE_CATEGORIES.reduce((acc, category) => {
         acc[category] = 0;
         return acc;
       }, {} as { [key: string]: number }),
     };
     setEntries([...entries, newEntry]);
+    setNewContractorName("");
   };
   const isToday = (date: Date) => {
     const today = new Date();
@@ -658,10 +668,40 @@ export default function LaborTable({
       {userRole === "administrator" && (
         <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t">
           <div className="flex space-x-2">
-            <Button onClick={addRow} className="flex-1">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Row
-            </Button>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="flex-1">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Row
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add New Contractor</DialogTitle>
+                </DialogHeader>
+                <div className="py-4">
+                  <Input
+                    placeholder="Enter contractor name"
+                    value={newContractorName}
+                    onChange={(e) => setNewContractorName(e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                <div className="flex justify-end space-x-2">
+                  <DialogClose asChild>
+                    <Button variant="outline">Cancel</Button>
+                  </DialogClose>
+                  <DialogClose asChild>
+                    <Button
+                      onClick={addRow}
+                      disabled={!newContractorName.trim()}
+                    >
+                      Add
+                    </Button>
+                  </DialogClose>
+                </div>
+              </DialogContent>
+            </Dialog>
             <Button onClick={handleSave} disabled={isSaving} className="flex-1">
               <Save className="w-4 h-4 mr-2" />
               {isSaving ? "Saving..." : "Save Changes"}
@@ -672,6 +712,3 @@ export default function LaborTable({
     </div>
   );
 }
-
-
-
