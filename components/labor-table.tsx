@@ -440,7 +440,7 @@ export default function LaborTable({
   const isEditable = userRole === "supervisor" ? isToday(selectedDate) : true;
 
   const updateValue = (contractor: string, category: string, value: string) => {
-    if (userRole !== "supervisor") return;
+    //if (userRole !== "supervisor") return;
     if (!isEditable) return;
     const numValue = value === "" ? 0 : Math.max(0, parseInt(value) || 0);
     setEntries(
